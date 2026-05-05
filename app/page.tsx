@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProfile, getRecentJournalSummary, saveCurrentWorkout } from '@/lib/storage'
+import { generateWorkout } from '@/lib/generator'
 import type { Duration, Difficulty, Focus, Location } from '@/lib/types'
 
 const DURATIONS: { label: string; value: Duration }[] = [
@@ -27,23 +28,21 @@ export default function Home() {
     if (!p.onboardingComplete) setNeedsOnboarding(true)
   }, [])
 
-  async function handleGenerate() {
+  function handleGenerate() {
     setError('')
     setLoading(true)
     try {
-      const profile = getProfile()
+      const profile       = getProfile()
       const recentHistory = getRecentJournalSummary(5)
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duration, difficulty, focus, location, profile, recentHistory }),
-      })
-      if (!res.ok) throw new Error('Generation failed')
-      const { workout } = await res.json()
+      const workout       = generateWorkout(
+        duration, difficulty, focus, location,
+        { hasSlantBoard: profile.hasSlantBoard, hasBands: profile.hasBands },
+        recentHistory,
+      )
       saveCurrentWorkout(workout)
       router.push('/workout')
     } catch {
-      setError('Something went wrong. Check your connection and try again.')
+      setError('Something went wrong. Try again.')
     } finally {
       setLoading(false)
     }
@@ -178,7 +177,7 @@ export default function Home() {
         {error && <p className="text-red-400 text-sm text-center mb-4">{error}</p>}
         <button
           onClick={handleGenerate}
-          disabled={loading}
+          disabled={false}
           className="w-full bg-amber-400 text-zinc-950 font-bold text-xl py-5 rounded-2xl disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
           {loading ? 'Building your workout…' : 'Go'}
