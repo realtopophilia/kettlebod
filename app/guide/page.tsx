@@ -2,8 +2,20 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentWorkout } from '@/lib/storage'
-import type { GeneratedWorkout, Exercise } from '@/lib/types'
+import { getCurrentWorkout, getProfile } from '@/lib/storage'
+import type { GeneratedWorkout, Exercise, UserProfile } from '@/lib/types'
+
+function bellChip(bell: Exercise['recommendedBell'], profile: UserProfile): string | null {
+  if (!bell || bell === 'bodyweight') return null
+  const weights: Record<string, string> = {
+    light:  profile.kettlebellLight,
+    medium: profile.kettlebellMedium,
+    heavy:  profile.kettlebellHeavy,
+  }
+  const w = weights[bell]
+  const label = bell.charAt(0).toUpperCase() + bell.slice(1)
+  return w ? `🔔 ${label} · ${w}` : `🔔 ${label}`
+}
 
 function RestTimer({ seconds, onSkip }: { seconds: number; onSkip: () => void }) {
   const [remaining, setRemaining] = useState(seconds)
@@ -40,12 +52,14 @@ export default function GuidePage() {
   const [index, setIndex] = useState(0)
   const [showRest, setShowRest] = useState(false)
   const [startTime] = useState(Date.now())
+  const [profile, setProfile] = useState(getProfile())
 
   useEffect(() => {
     const w = getCurrentWorkout()
     if (!w) { router.push('/'); return }
     setWorkout(w)
     setExercises(w.sections.flatMap(s => s.exercises))
+    setProfile(getProfile())
   }, [router])
 
   function advance() {
@@ -117,6 +131,9 @@ export default function GuidePage() {
           <h2 className="text-3xl font-bold text-zinc-100 mb-3 leading-tight">{ex.name}</h2>
           <p className="text-amber-400 text-2xl font-mono font-semibold">{ex.prescription}</p>
           {ex.rest && <p className="text-zinc-500 text-sm mt-1">Rest {ex.rest} after</p>}
+          {bellChip(ex.recommendedBell, profile) && (
+            <p className="text-zinc-500 text-sm mt-1">{bellChip(ex.recommendedBell, profile)}</p>
+          )}
         </div>
 
         <div className="bg-zinc-800 rounded-2xl p-5">

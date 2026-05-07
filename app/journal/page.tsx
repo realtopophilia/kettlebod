@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getJournal } from '@/lib/storage'
+import { getJournal, deleteJournalEntry } from '@/lib/storage'
 import type { JournalEntry } from '@/lib/types'
 
 function scoreColor(score: number) {
@@ -110,10 +110,17 @@ function InsightCard({ entries }: { entries: JournalEntry[] }) {
 
 export default function JournalPage() {
   const [entries, setEntries] = useState<JournalEntry[]>([])
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   useEffect(() => {
     setEntries(getJournal())
   }, [])
+
+  function handleDelete(id: string) {
+    deleteJournalEntry(id)
+    setEntries(getJournal())
+    setConfirmId(null)
+  }
 
   const thisMonth = entries.filter(e => e.date.startsWith(new Date().toISOString().slice(0, 7)))
   const avgAlignment = thisMonth.length
@@ -162,22 +169,53 @@ export default function JournalPage() {
               {entries.map(e => {
                 const modified = e.exercises.filter(x => x.modified)
                 const skipped  = e.exercises.filter(x => x.skipped)
+                const isConfirming = confirmId === e.id
                 return (
                   <div key={e.id} className={`rounded-xl p-4 border ${scoreBg(e.alignmentScore)}`}>
                     <div className="flex items-start justify-between gap-3 mb-1">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="font-medium text-zinc-200 text-sm leading-snug">{e.workoutTitle}</p>
                         <p className="text-zinc-500 text-xs mt-0.5">{e.date} · {e.durationMinutes} min</p>
                       </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className={`text-lg font-bold ${scoreColor(e.alignmentScore)}`}>{e.alignmentScore}</p>
-                        <p className="text-zinc-600 text-xs">/ 100</p>
+                      <div className="flex items-start gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${scoreColor(e.alignmentScore)}`}>{e.alignmentScore}</p>
+                          <p className="text-zinc-600 text-xs">/ 100</p>
+                        </div>
+                        {!isConfirming && (
+                          <button
+                            onClick={() => setConfirmId(e.id)}
+                            className="text-zinc-700 hover:text-red-400 transition-colors mt-0.5"
+                            title="Delete entry"
+                          >
+                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24">
+                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                     {(modified.length > 0 || skipped.length > 0) && (
                       <div className="mt-2 text-xs text-zinc-500 space-y-0.5">
                         {modified.length > 0 && <p>Modified: {modified.map(x => x.name).join(', ')}</p>}
                         {skipped.length > 0  && <p>Skipped: {skipped.map(x => x.name).join(', ')}</p>}
+                      </div>
+                    )}
+                    {isConfirming && (
+                      <div className="mt-3 flex items-center gap-2">
+                        <p className="text-xs text-zinc-400 flex-1">Delete this entry?</p>
+                        <button
+                          onClick={() => handleDelete(e.id)}
+                          className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => setConfirmId(null)}
+                          className="text-xs text-zinc-500 px-3 py-1.5 rounded-lg border border-zinc-700"
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
                   </div>

@@ -72,6 +72,11 @@ export function addJournalEntry(entry: JournalEntry) {
   localStorage.setItem(KEYS.journal, JSON.stringify(journal))
 }
 
+export function deleteJournalEntry(id: string) {
+  const journal = getJournal().filter(e => e.id !== id)
+  localStorage.setItem(KEYS.journal, JSON.stringify(journal))
+}
+
 export function getRecentJournalSummary(n = 5): string {
   const entries = getJournal().slice(0, n)
   if (entries.length === 0) return 'No previous sessions yet.'

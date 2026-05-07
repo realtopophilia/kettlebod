@@ -7,11 +7,9 @@ import { getProfile, getRecentJournalSummary, saveCurrentWorkout } from '@/lib/s
 import { generateWorkout } from '@/lib/generator'
 import type { Duration, Difficulty, Focus, Location } from '@/lib/types'
 
-const DURATIONS: { label: string; value: Duration }[] = [
-  { label: 'Quick', value: 20 },
-  { label: 'Standard', value: 30 },
-  { label: 'Long', value: 45 },
-]
+const MIN_DURATION: Duration = 10
+const MAX_DURATION: Duration = 60
+const STEP = 5
 
 export default function Home() {
   const router = useRouter()
@@ -84,21 +82,25 @@ export default function Home() {
         {/* Duration */}
         <div>
           <label className="text-xs text-zinc-500 uppercase tracking-widest mb-3 block">Time</label>
-          <div className="grid grid-cols-3 gap-2">
-            {DURATIONS.map(d => (
-              <button
-                key={d.value}
-                onClick={() => setDuration(d.value)}
-                className={`py-3 rounded-xl text-sm font-semibold transition-all ${
-                  duration === d.value
-                    ? 'bg-amber-400 text-zinc-950'
-                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                }`}
-              >
-                {d.label}
-                <span className="block text-xs font-normal opacity-70">{d.value} min</span>
-              </button>
-            ))}
+          <div className="flex items-center justify-between bg-zinc-800 rounded-xl px-4 py-3">
+            <button
+              onClick={() => setDuration(d => Math.max(MIN_DURATION, d - STEP) as Duration)}
+              disabled={duration === MIN_DURATION}
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-2xl font-bold text-zinc-300 disabled:text-zinc-700 hover:text-amber-400 transition-colors"
+            >
+              −
+            </button>
+            <div className="text-center">
+              <span className="text-2xl font-bold text-amber-400">{duration}</span>
+              <span className="text-zinc-500 text-sm ml-1">min</span>
+            </div>
+            <button
+              onClick={() => setDuration(d => Math.min(MAX_DURATION, d + STEP) as Duration)}
+              disabled={duration === MAX_DURATION}
+              className="w-10 h-10 flex items-center justify-center rounded-lg text-2xl font-bold text-zinc-300 disabled:text-zinc-700 hover:text-amber-400 transition-colors"
+            >
+              +
+            </button>
           </div>
         </div>
 

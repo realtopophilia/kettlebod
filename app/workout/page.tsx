@@ -2,14 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getCurrentWorkout, saveCurrentWorkout } from '@/lib/storage'
-import type { GeneratedWorkout, Exercise } from '@/lib/types'
+import { getCurrentWorkout, getProfile } from '@/lib/storage'
+import type { GeneratedWorkout, Exercise, UserProfile } from '@/lib/types'
 
-function ExerciseRow({ exercise, onSwap }: { exercise: Exercise; onSwap: () => void }) {
+function bellChip(bell: Exercise['recommendedBell'], profile: UserProfile): string | null {
+  if (!bell || bell === 'bodyweight') return null
+  const weights: Record<string, string> = {
+    light:  profile.kettlebellLight,
+    medium: profile.kettlebellMedium,
+    heavy:  profile.kettlebellHeavy,
+  }
+  const w = weights[bell]
+  const label = bell.charAt(0).toUpperCase() + bell.slice(1)
+  return w ? `🔔 ${label} · ${w}` : `🔔 ${label}`
+}
+
+function ExerciseRow({ exercise, profile, onSwap }: { exercise: Exercise; profile: UserProfile; onSwap: () => void }) {
   const [swapIndex, setSwapIndex] = useState<number | null>(null)
 
   const current = swapIndex !== null ? exercise.alternatives[swapIndex] : exercise
   const isSwapped = swapIndex !== null
+  const chip = bellChip(exercise.recommendedBell, profile)
 
   function handleSwap() {
     if (!exercise.alternatives?.length) return
@@ -33,6 +46,7 @@ function ExerciseRow({ exercise, onSwap }: { exercise: Exercise; onSwap: () => v
           </div>
           <p className="text-amber-400 text-sm font-mono font-medium">{current.prescription}</p>
           {current.rest && <p className="text-zinc-500 text-xs mt-0.5">Rest {current.rest}</p>}
+          {chip && <p className="text-zinc-500 text-xs mt-1">{chip}</p>}
           <p className="text-zinc-400 text-xs mt-2 italic">{current.cue}</p>
         </div>
         {exercise.alternatives?.length > 0 && (
@@ -55,11 +69,13 @@ function ExerciseRow({ exercise, onSwap }: { exercise: Exercise; onSwap: () => v
 export default function WorkoutPage() {
   const router = useRouter()
   const [workout, setWorkout] = useState<GeneratedWorkout | null>(null)
+  const [profile, setProfile] = useState(getProfile())
 
   useEffect(() => {
     const w = getCurrentWorkout()
     if (!w) { router.push('/'); return }
     setWorkout(w)
+    setProfile(getProfile())
   }, [router])
 
   if (!workout) return (
@@ -102,7 +118,7 @@ export default function WorkoutPage() {
             </p>
             <div className="flex flex-col gap-3">
               {section.exercises.map((ex, ei) => (
-                <ExerciseRow key={ei} exercise={ex} onSwap={() => {}} />
+                <ExerciseRow key={ei} exercise={ex} profile={profile} onSwap={() => {}} />
               ))}
             </div>
           </div>

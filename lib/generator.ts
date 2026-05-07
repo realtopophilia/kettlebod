@@ -405,6 +405,44 @@ function available(e: ExerciseDef, location: Location, profile: { hasSlantBoard:
   return true
 }
 
+// Bell weight recommendations per exercise name
+const BELL_WEIGHTS: Record<string, 'light' | 'medium' | 'heavy' | 'bodyweight'> = {
+  'Hip hinge to wall':            'bodyweight',
+  'Goblet squat (warm-up)':       'light',
+  'Dead bug (warm-up)':           'bodyweight',
+  'Arm circle + leg swing':       'bodyweight',
+  'KB Swing (Russian)':           'heavy',
+  'KB Deadlift':                  'heavy',
+  'Romanian Deadlift':            'heavy',
+  'KB Clean':                     'medium',
+  'Bulgarian Split Squat':        'medium',
+  'Single-leg RDL':               'medium',
+  'Goblet Squat Reverse Lunge':   'medium',
+  'Weighted Step-up':             'medium',
+  'Box Pistol Progression':       'bodyweight',
+  'Goblet Squat':                 'medium',
+  'Goblet Squat (slow eccentric)':'medium',
+  'Half-kneeling KB Press':       'medium',
+  'KB Floor Press':               'medium',
+  'Push-up':                      'bodyweight',
+  'KB Standing Press':            'medium',
+  'KB Bent-over Row':             'medium',
+  'Double KB Row':                'medium',
+  'Band Pull-apart':              'bodyweight',
+  'Dead Bug':                     'bodyweight',
+  'Plank':                        'bodyweight',
+  'KB Suitcase Hold':             'medium',
+  'Pallof Press':                 'bodyweight',
+  'Jump Squat':                   'bodyweight',
+  'Box Jump':                     'bodyweight',
+  'Broad Jump':                   'bodyweight',
+  'Kneeling Hip Flexor Stretch':  'bodyweight',
+  'Standing Hamstring Stretch':   'bodyweight',
+  'Slant Board Calf Stretch':     'bodyweight',
+  '90/90 Hip Stretch':            'bodyweight',
+  'Pigeon Pose':                  'bodyweight',
+}
+
 function toExercise(def: ExerciseDef, difficulty: Difficulty): Exercise {
   return {
     name: def.name,
@@ -412,6 +450,7 @@ function toExercise(def: ExerciseDef, difficulty: Difficulty): Exercise {
     rest: def.rests[difficulty] !== '–' ? def.rests[difficulty] : undefined,
     cue: def.cue,
     role: def.role,
+    recommendedBell: BELL_WEIGHTS[def.name],
     alternatives: def.alternatives.map(alt => ({
       name: alt.name,
       prescription: alt.prescription || def.prescriptions[difficulty],
@@ -474,8 +513,15 @@ export function generateWorkout(
   const recent = recentExerciseNames(recentHistory)
   const avail = (e: ExerciseDef) => available(e, location, profile)
 
-  // Main block size
-  const mainCount = duration === 20 ? 4 : duration === 30 ? 6 : 8
+  // Main block size — scales with duration (10–60 min)
+  const mainCount = duration <= 10 ? 2
+    : duration <= 15 ? 3
+    : duration <= 20 ? 4
+    : duration <= 25 ? 5
+    : duration <= 35 ? 6
+    : duration <= 45 ? 8
+    : duration <= 55 ? 9
+    : 10
 
   // ── Warm-up (2–3 exercises) ─────────────────────────────────────────────────
   const warmupPool = byRole('warmup').filter(avail)

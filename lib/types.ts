@@ -1,4 +1,4 @@
-export type Duration = 20 | 30 | 45
+export type Duration = 10 | 15 | 20 | 25 | 30 | 35 | 40 | 45 | 50 | 55 | 60
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type Focus = 'goal' | 'mix'
 export type Location = 'gym' | 'backyard'
@@ -9,6 +9,7 @@ export interface Exercise {
   rest?: string          // "90s"
   cue: string
   role: string           // "hip hinge", "single-leg", "plyometric", etc.
+  recommendedBell?: 'light' | 'medium' | 'heavy' | 'bodyweight'
   alternatives: {
     name: string
     prescription: string
